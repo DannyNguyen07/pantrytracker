@@ -1,9 +1,13 @@
-const multer = require('multer');
-const upload = multer().single('image');
-const admin = require('firebase-admin');
-const fetch = require('node-fetch');
-require('dotenv').config();
+import multer from 'multer';
+import admin from 'firebase-admin';
+import fetch from 'node-fetch';
+import { config } from 'dotenv';
 
+config(); // Load environment variables from .env file
+
+const upload = multer().single('image');
+
+// Initialize Firebase if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -20,15 +24,20 @@ if (!admin.apps.length) {
     })
   });
 }
+
 const db = admin.firestore();
 
 export default function handler(req, res) {
+  console.log('Request received');
+  
   upload(req, res, async (err) => {
     if (err) {
+      console.error('Multer error:', err);
       return res.status(500).send(err.message);
     }
 
     const imageBuffer = req.file.buffer.toString('base64');
+    console.log('Image received and converted to base64');
 
     try {
       const response = await fetch('https://api.openai.com/v1/images', {
@@ -43,8 +52,11 @@ export default function handler(req, res) {
         })
       });
 
+      console.log('OpenAI response received');
+
       const data = await response.json();
-      const itemName = data.choices[0].text.trim(); 
+      const itemName = data.choices[0].text.trim(); // Adjust based on actual API response structure
+      console.log('Item recognized:', itemName);
 
       // Add recognized item to Firestore
       const docRef = db.collection('pantry').doc(itemName);
@@ -57,6 +69,7 @@ export default function handler(req, res) {
         await docRef.set({ count: 1 });
       }
 
+      console.log('Item added to Firestore');
       res.status(200).json({ item: itemName });
     } catch (error) {
       console.error('Error recognizing image:', error);
