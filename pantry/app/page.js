@@ -3,7 +3,7 @@ import { Box, Stack, Typography, Button, Modal, TextField } from "@mui/material"
 import {firestore} from "@/firebase"
 import {collection, query, doc, getDocs, setDoc, deleteDoc, getDoc} from "firebase/firestore"
 import { useEffect, useState } from "react";
-import CameraComponent from "./Camera";
+import CameraComponent from "./CameraComponent";
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
 const style = {
@@ -89,19 +89,9 @@ export default function Home() {
     setFilteredPantry(filtered);
   }
 
-  const handleCapture = async (imageBlob) => {
-    const formData = new FormData();
-    formData.append("image", imageBlob);
-
-    const response = await fetch("http://localhost:5000/recognize", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-    const recognizedItem = data.item;
-
-    await addItem(recognizedItem);
+  const handleCapture = (image) => {
+    console.log("Captured image:", image);
+    // Here you would process the image and add the item to the pantry
     handleCameraClose();
   }
 

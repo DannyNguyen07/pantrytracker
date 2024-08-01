@@ -10,11 +10,7 @@ function CameraComponent({ onCapture }) {
   const handleTakePhoto = () => {
     const photo = camera.current.takePhoto();
     setImage(photo);
-    fetch(photo)
-      .then(res => res.blob())
-      .then(blob => {
-        onCapture(blob);  
-      });
+    onCapture(photo);
   };
 
   return (
@@ -29,13 +25,13 @@ function CameraComponent({ onCapture }) {
         onClick={handleTakePhoto}
         style={{
           position: "absolute",
-          bottom: 1, 
+          bottom: 10,
           left: "50%",
           transform: "translateX(-50%)",
           backgroundColor: "white",
         }}
       >
-        <CameraAltIcon style={{ fontSize: 15, color: "black" }} /> 
+        <CameraAltIcon style={{ fontSize: 15, color: "black" }} />
       </IconButton>
       {image && <img src={image} alt="Captured" style={{ marginTop: 20 }} />}
     </div>
@@ -43,6 +39,7 @@ function CameraComponent({ onCapture }) {
 }
 
 export default CameraComponent;
+
 
 
 
