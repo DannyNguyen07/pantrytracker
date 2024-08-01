@@ -3,6 +3,8 @@ import { Box, Stack, Typography, Button, Modal, TextField } from "@mui/material"
 import {firestore} from "@/firebase"
 import {collection, query, doc, getDocs, setDoc, deleteDoc, getDoc} from "firebase/firestore"
 import { useEffect, useState } from "react";
+import CameraComponent from "./Camera";
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
 const style = {
   position: 'absolute',
@@ -22,10 +24,16 @@ const style = {
 
 export default function Home() {
   const [pantry, setPantry] = useState([])
+  const [filteredPantry, setFilteredPantry] = useState([]);
   const [open, setOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [itemName, setItemName] = useState('')
+  const [searchTerm, setSearchTerm] = useState('');
+
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-  const [itemName, setItemName] = useState('')
+  const handleCameraOpen = () => setCameraOpen(true);
+  const handleCameraClose = () => setCameraOpen(false);
 
   const updatePantry = async() => {
     const snapshot = query(collection(firestore, 'pantry'))
@@ -36,6 +44,7 @@ export default function Home() {
     })
     console.log(pantryList)
     setPantry(pantryList)
+    setFilteredPantry(pantryList);
   }
 
   useEffect(() => {
@@ -72,6 +81,30 @@ export default function Home() {
     }
     await updatePantry()
   }
+
+  const handleSearch = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    const filtered = pantry.filter(item => item.name.toLowerCase().includes(term.toLowerCase()));
+    setFilteredPantry(filtered);
+  }
+
+  const handleCapture = async (imageBlob) => {
+    const formData = new FormData();
+    formData.append("image", imageBlob);
+
+    const response = await fetch("http://localhost:5000/recognize", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    const recognizedItem = data.item;
+
+    await addItem(recognizedItem);
+    handleCameraClose();
+  }
+
   return <Box
       width="100vw"
       height="100vh"
@@ -93,12 +126,12 @@ export default function Home() {
           </Typography>
           <Stack width = '100%' direction = 'row' spacing = {2}>
             <TextField 
-            id = "outlined-basic" 
-            label = 'Item' 
-            variant = 'outlined' 
-            fullWidth
-            value = {itemName}
-            onChange={(e) => setItemName(e.target.value)}
+              id = "outlined-basic" 
+              label = 'Item' 
+              variant = 'outlined' 
+              fullWidth
+              value = {itemName}
+              onChange={(e) => setItemName(e.target.value)}
             />
             <Button variant = 'outlined'
             onClick={() =>{
@@ -110,6 +143,32 @@ export default function Home() {
           </Stack>
         </Box>
       </Modal>
+
+      <Modal
+        open={cameraOpen}
+        onClose={handleCameraClose}
+        aria-labelledby="camera-modal-title"
+        aria-describedby="camera-modal-description"
+      >
+        <Box sx={style}>
+          <CameraComponent onCapture={handleCapture} />
+        </Box>
+      </Modal>
+
+      <Box display="flex" alignItems="center" gap={1}>
+        <TextField
+          id="search"
+          label="Search"
+          variant="outlined"
+          value={searchTerm}
+          onChange={handleSearch}
+          sx={{ marginBottom: 2 }}
+        />
+        <Button variant="contained" onClick={handleCameraOpen}>
+          <CameraAltIcon />
+        </Button>
+      </Box>
+      
       <Button variant="contained" onClick={handleOpen}>
         Add
       </Button>
@@ -127,7 +186,7 @@ export default function Home() {
         </Typography>
       </Box>
       <Stack width = "800px" height = "300px" spacing = {2} overflow={'auto'}>
-        {pantry.map((item) => (
+        {filteredPantry.map((item) => (
           <Box
             key = {item.name}
             width = "100%"

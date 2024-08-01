@@ -5,5 +5,5 @@
       "@/*": ["app/*"]
     }
   },
-  "include": ["app"]
+  "include": ["app", "server.js"]
 }
